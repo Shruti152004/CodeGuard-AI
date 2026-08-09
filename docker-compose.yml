@@ -1,0 +1,95 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: codeguard-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-codeguard_db}
+      POSTGRES_USER: ${POSTGRES_USER:-codeguard_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-codeguard_secure_password_123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-codeguard_admin} -d ${POSTGRES_DB:-codeguard_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  spring-boot-core:
+    build:
+      context: ./backend/spring-boot-core
+      dockerfile: Dockerfile
+    container_name: codeguard-spring-boot-core
+    ports:
+      - "8080:8080"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-codeguard_db}
+      POSTGRES_USER: ${POSTGRES_USER:-codeguard_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-codeguard_secure_password_123}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  developer-portal:
+    build:
+      context: ./developer-portal/react-typescript
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8080/api/health
+    container_name: codeguard-developer-portal
+    ports:
+      - "5173:80"
+    depends_on:
+      - spring-boot-core
+
+  admin-portal:
+    build:
+      context: ./admin-portal/angular-typescript
+      dockerfile: Dockerfile
+    container_name: codeguard-admin-portal
+    ports:
+      - "4200:80"
+    depends_on:
+      - spring-boot-core
+
+  node-notification:
+    build:
+      context: ./services/node-notification
+      dockerfile: Dockerfile
+    container_name: codeguard-node-notification
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_PORT=3000
+
+  flask-github-webhooks:
+    build:
+      context: ./services/flask-github-webhooks
+      dockerfile: Dockerfile
+    container_name: codeguard-flask-webhooks
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_PORT=5000
+
+  python-ai:
+    build:
+      context: ./services/python-ai
+      dockerfile: Dockerfile
+    container_name: codeguard-python-ai
+    ports:
+      - "8000:8000"
+
+  csharp-analyzer:
+    build:
+      context: ./services/csharp-analyzer
+      dockerfile: Dockerfile
+    container_name: codeguard-csharp-analyzer
+    ports:
+      - "5001:5001"
+
+volumes:
+  postgres-data:

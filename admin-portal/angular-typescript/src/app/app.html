@@ -1,0 +1,104 @@
+<div className="admin-container">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="icon">⚙️</span>
+      <h2>CodeGuard <span class="highlight">Admin</span></h2>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active">📊 Dashboard</a>
+      <a href="#" class="nav-item">🏢 Organizations</a>
+      <a href="#" class="nav-item">👥 User Management</a>
+      <a href="#" class="nav-item">🛡️ Security Audits</a>
+      <a href="#" class="nav-item">⚙️ Settings</a>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <header class="top-bar">
+      <div class="search-bar">
+        <input type="text" placeholder="Search system resources..." />
+      </div>
+      <div class="admin-profile">
+        <span class="avatar">👨‍💻</span>
+        <span class="name">Super Admin</span>
+      </div>
+    </header>
+
+    <div class="dashboard-widgets">
+      <!-- Widget 1: System Health -->
+      <div class="widget-card">
+        <h3>Platform Activity</h3>
+        <div class="stat-value">98.4%</div>
+        <p class="stat-desc">Healthy runtime across containers</p>
+      </div>
+
+      <!-- Widget 2: Active Users -->
+      <div class="widget-card">
+        <h3>Active Users</h3>
+        <div class="stat-value">1,248</div>
+        <p class="stat-desc">+12% growth this week</p>
+      </div>
+
+      <!-- Widget 3: Total Repositories -->
+      <div class="widget-card">
+        <h3>Connected Repos</h3>
+        <div class="stat-value">4,812</div>
+        <p class="stat-desc">Across 142 organizations</p>
+      </div>
+
+      <!-- Widget 4: AI Usage -->
+      <div class="widget-card">
+        <h3>AI Tokens Used</h3>
+        <div class="stat-value">8.4M</div>
+        <p class="stat-desc">Mock AI responses generated</p>
+      </div>
+    </div>
+
+    <section class="system-section">
+      <div class="table-card">
+        <h3>Recent Platform Audit Logs</h3>
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Action</th>
+              <th>Service</th>
+              <th>Operator</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2026-08-09 15:40:12</td>
+              <td>User Registration</td>
+              <td>spring-boot-core</td>
+              <td>system_guest</td>
+              <td><span class="badge success">SUCCESS</span></td>
+            </tr>
+            <tr>
+              <td>2026-08-09 15:38:45</td>
+              <td>Repository Sync</td>
+              <td>flask-github-webhooks</td>
+              <td>webhook_agent</td>
+              <td><span class="badge success">SUCCESS</span></td>
+            </tr>
+            <tr>
+              <td>2026-08-09 15:35:10</td>
+              <td>Analysis Job Completed</td>
+              <td>csharp-analyzer</td>
+              <td>runner_net8</td>
+              <td><span class="badge success">SUCCESS</span></td>
+            </tr>
+            <tr>
+              <td>2026-08-09 15:30:00</td>
+              <td>System Health Check</td>
+              <td>spring-boot-core</td>
+              <td>cron_daemon</td>
+              <td><span class="badge success">SUCCESS</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
