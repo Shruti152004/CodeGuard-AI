@@ -49,6 +49,8 @@ public class AnalyzerRegistry {
             case "ts":
             case "tsx":
                 return "TypeScript";
+            case "cs":
+                return "C#";
             default:
                 return "Unknown";
         }
