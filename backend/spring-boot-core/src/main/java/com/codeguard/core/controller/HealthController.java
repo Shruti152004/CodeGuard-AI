@@ -39,4 +39,13 @@ public class HealthController {
 
         return ResponseEntity.ok(status);
     }
+
+    @GetMapping("/test/protected")
+    public ResponseEntity<Map<String, Object>> getProtected(java.security.Principal principal) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Access Granted");
+        response.put("user", principal != null ? principal.getName() : "anonymous");
+        response.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.ok(response);
+    }
 }
