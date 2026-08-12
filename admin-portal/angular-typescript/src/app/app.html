@@ -1,104 +1,140 @@
-<div className="admin-container">
+<div class="admin-container">
+  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
       <span class="icon">⚙️</span>
       <h2>CodeGuard <span class="highlight">Admin</span></h2>
     </div>
     <nav class="sidebar-nav">
-      <a href="#" class="nav-item active">📊 Dashboard</a>
-      <a href="#" class="nav-item">🏢 Organizations</a>
-      <a href="#" class="nav-item">👥 User Management</a>
-      <a href="#" class="nav-item">🛡️ Security Audits</a>
-      <a href="#" class="nav-item">⚙️ Settings</a>
+      <a href="javascript:void(0)" class="nav-item" [class.active]="activeTab === 'metrics'" (click)="setTab('metrics')">📊 Dashboard & Analytics</a>
+      <a href="javascript:void(0)" class="nav-item" [class.active]="activeTab === 'users'" (click)="setTab('users')">👥 User Management</a>
+      <a href="javascript:void(0)" class="nav-item" [class.active]="activeTab === 'orgs'" (click)="setTab('orgs')">🏢 Organizations</a>
+      <a href="javascript:void(0)" class="nav-item" [class.active]="activeTab === 'logs'" (click)="setTab('logs')">🛡️ Platform Audit Logs</a>
     </nav>
   </aside>
 
+  <!-- Main Content -->
   <main class="main-content">
     <header class="top-bar">
-      <div class="search-bar">
-        <input type="text" placeholder="Search system resources..." />
-      </div>
-      <div class="admin-profile">
-        <span class="avatar">👨‍💻</span>
-        <span class="name">Super Admin</span>
-      </div>
+      <h2>Engineering Management Console</h2>
+      <button class="btn-refresh" (click)="refreshData()">🔄 Refresh Data</button>
     </header>
 
-    <div class="dashboard-widgets">
-      <!-- Widget 1: System Health -->
-      <div class="widget-card">
-        <h3>Platform Activity</h3>
-        <div class="stat-value">98.4%</div>
-        <p class="stat-desc">Healthy runtime across containers</p>
+    <!-- Tab 1: Dashboard & Analytics -->
+    <div *ngIf="activeTab === 'metrics'">
+      <div class="dashboard-widgets">
+        <div class="widget-card">
+          <h3>Total Analysis Runs</h3>
+          <div class="stat-value">{{ summary().totalRuns }}</div>
+          <p class="stat-desc">Executed across all repos</p>
+        </div>
+
+        <div class="widget-card">
+          <h3>Failed Runs</h3>
+          <div class="stat-value" style="color: #ff4a4a;">{{ summary().failedRuns }}</div>
+          <p class="stat-desc">Kafka execution pipeline errors</p>
+        </div>
+
+        <div class="widget-card">
+          <h3>Average Quality Score</h3>
+          <div class="stat-value" style="color: #2ecc71;">{{ summary().averageScore }}%</div>
+          <p class="stat-desc">Overall codebase compliance</p>
+        </div>
+
+        <div class="widget-card">
+          <h3>AI Issues Flagged</h3>
+          <div class="stat-value" style="color: #66fcf1;">{{ summary().aiIssuesCount }}</div>
+          <p class="stat-desc">Source: AI_ANALYSIS reviews</p>
+        </div>
       </div>
 
-      <!-- Widget 2: Active Users -->
-      <div class="widget-card">
-        <h3>Active Users</h3>
-        <div class="stat-value">1,248</div>
-        <p class="stat-desc">+12% growth this week</p>
-      </div>
-
-      <!-- Widget 3: Total Repositories -->
-      <div class="widget-card">
-        <h3>Connected Repos</h3>
-        <div class="stat-value">4,812</div>
-        <p class="stat-desc">Across 142 organizations</p>
-      </div>
-
-      <!-- Widget 4: AI Usage -->
-      <div class="widget-card">
-        <h3>AI Tokens Used</h3>
-        <div class="stat-value">8.4M</div>
-        <p class="stat-desc">Mock AI responses generated</p>
+      <div style="background: #1f2833; padding: 24px; border-radius: 8px; border: 1px solid #2e303a; margin-top: 20px;">
+        <h3>Engineering Health Trends</h3>
+        <p style="color: #9ea0a5; margin-top: 10px;">Average code health score remains stable. AI-driven static analysis reviews flag maintainability and security recommendations at scale.</p>
       </div>
     </div>
 
-    <section class="system-section">
-      <div class="table-card">
-        <h3>Recent Platform Audit Logs</h3>
-        <table class="audit-table">
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Action</th>
-              <th>Service</th>
-              <th>Operator</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>2026-08-09 15:40:12</td>
-              <td>User Registration</td>
-              <td>spring-boot-core</td>
-              <td>system_guest</td>
-              <td><span class="badge success">SUCCESS</span></td>
-            </tr>
-            <tr>
-              <td>2026-08-09 15:38:45</td>
-              <td>Repository Sync</td>
-              <td>flask-github-webhooks</td>
-              <td>webhook_agent</td>
-              <td><span class="badge success">SUCCESS</span></td>
-            </tr>
-            <tr>
-              <td>2026-08-09 15:35:10</td>
-              <td>Analysis Job Completed</td>
-              <td>csharp-analyzer</td>
-              <td>runner_net8</td>
-              <td><span class="badge success">SUCCESS</span></td>
-            </tr>
-            <tr>
-              <td>2026-08-09 15:30:00</td>
-              <td>System Health Check</td>
-              <td>spring-boot-core</td>
-              <td>cron_daemon</td>
-              <td><span class="badge success">SUCCESS</span></td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- Tab 2: User Management -->
+    <div *ngIf="activeTab === 'users'" class="table-card">
+      <h3>User Management</h3>
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>User ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Roles</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users()">
+            <td>#{{ user.id }}</td>
+            <td style="font-weight: 600;">{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>
+              <span class="badge" [class.success]="user.active">{{ user.active ? 'ACTIVE' : 'INACTIVE' }}</span>
+            </td>
+            <td>{{ user.roles.join(', ') }}</td>
+            <td>
+              <select (change)="changeUserRole(user.id, $any($event.target).value)" style="padding: 4px; background: #151b24; border: 1px solid #2e303a; color: #fff; border-radius: 4px;">
+                <option value="">Update Role</option>
+                <option value="ROLE_USER">ROLE_USER</option>
+                <option value="ROLE_ADMIN">ROLE_ADMIN</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tab 3: Organization Management -->
+    <div *ngIf="activeTab === 'orgs'" class="table-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3>Organizations</h3>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" [(ngModel)]="newOrgName" placeholder="New Org Name" style="padding: 8px; background: #151b24; border: 1px solid #2e303a; color: #fff; border-radius: 4px; font-size: 14px;" />
+          <button (click)="createOrg()" style="padding: 8px 16px; background: #66fcf1; color: #0b0c10; font-weight: 600; border: none; border-radius: 4px; cursor: pointer;">Add Org</button>
+        </div>
       </div>
-    </section>
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Org ID</th>
+            <th>Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let org of organizations()">
+            <td>#{{ org.id }}</td>
+            <td style="font-weight: 600; color: #fff;">{{ org.name }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tab 4: Platform Audit Logs -->
+    <div *ngIf="activeTab === 'logs'" class="table-card">
+      <h3>System Audit Logs</h3>
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Operator</th>
+            <th>Action</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of auditLogs()">
+            <td>{{ log.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+            <td style="color: #66fcf1;">{{ log.user }}</td>
+            <td style="font-weight: 600;">{{ log.action }}</td>
+            <td>{{ log.details }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </main>
 </div>

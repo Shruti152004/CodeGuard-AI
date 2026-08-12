@@ -1,10 +1,23 @@
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
+import { AdminService } from './services/admin.service';
+import { of } from 'rxjs';
+import { describe, beforeEach, it, expect } from 'vitest';
 
-describe('App', () => {
+class MockAdminService {
+  getUsers() { return of([]); }
+  getOrganizations() { return of([]); }
+  getAnalyticsSummary() { return of({ totalRuns: 0, failedRuns: 0, averageScore: 0, aiIssuesCount: 0 }); }
+  getAuditLogs() { return of([]); }
+}
+
+describe('App Component', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [
+        { provide: AdminService, useClass: MockAdminService }
+      ]
     }).compileComponents();
   });
 
@@ -14,10 +27,9 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('should default to metrics tab', () => {
     const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, admin-portal');
+    const app = fixture.componentInstance;
+    expect(app.activeTab).toBe('metrics');
   });
 });
