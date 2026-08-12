@@ -54,6 +54,9 @@ public class AnalysisService {
     @Autowired
     private TechnicalDebtRepository debtRepository;
 
+    @Autowired
+    private AnalysisEventProducer eventProducer;
+
     @Value("${csharp.analyzer.url:http://csharp-analyzer:5001/analyze}")
     private String csharpAnalyzerUrl;
 
@@ -138,6 +141,12 @@ public class AnalysisService {
 
         // Update Technical Debt aggregate
         updateTechnicalDebt(repoName, debtHours);
+
+        try {
+            eventProducer.publishAnalysisResult(analysis);
+        } catch (Exception ex) {
+            log.error("Failed to publish analysis completed event to Kafka broker: {}", ex.getMessage());
+        }
 
         return analysis;
     }
