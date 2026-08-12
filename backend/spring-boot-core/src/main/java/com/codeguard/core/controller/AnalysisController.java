@@ -53,14 +53,14 @@ public class AnalysisController {
         return ResponseEntity.ok(issues);
     }
 
-    @GetMapping("/technical-debt/{repoName}")
+    @GetMapping("/technical-debt/{*repoName}")
     public ResponseEntity<TechnicalDebt> getTechnicalDebt(@PathVariable String repoName) {
         return debtRepository.findByRepositoryName(repoName)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/history/{repoName}")
+    @GetMapping("/history/{*repoName}")
     public ResponseEntity<List<Analysis>> getAnalysisHistory(@PathVariable String repoName) {
         List<Analysis> history = analysisRepository.findByRepositoryNameOrderByCreatedAtDesc(repoName);
         return ResponseEntity.ok(history);

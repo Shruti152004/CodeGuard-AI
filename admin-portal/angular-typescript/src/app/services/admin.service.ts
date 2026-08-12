@@ -8,6 +8,11 @@ import { Observable } from 'rxjs';
 export class AdminService {
   private http = inject(HttpClient);
   private baseUrl = 'http://localhost:8080/api/admin';
+  private authUrl = 'http://localhost:8080/api/auth';
+
+  login(credentials: any): Observable<any> {
+    return this.http.post<any>(`${this.authUrl}/login`, credentials);
+  }
 
   private getHeaders(): HttpHeaders {
     // Add token if present from login cache (we can retrieve it from localStorage shared context)

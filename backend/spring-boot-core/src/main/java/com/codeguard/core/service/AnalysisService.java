@@ -57,6 +57,9 @@ public class AnalysisService {
     @Autowired
     private AnalysisEventProducer eventProducer;
 
+    @Autowired
+    private GithubClient githubClient;
+
     @Value("${csharp.analyzer.url:http://csharp-analyzer:5001/analyze}")
     private String csharpAnalyzerUrl;
 
@@ -65,14 +68,25 @@ public class AnalysisService {
 
     @Transactional
     public Analysis startAnalysis(String repoName, String branch, String gitHubToken) {
+        String activeBranch = branch;
+        if (repoName != null && repoName.contains("/")) {
+            String[] parts = repoName.split("/");
+            if (parts.length >= 2) {
+                activeBranch = githubClient.getDefaultBranch(parts[0], parts[1], gitHubToken);
+            }
+        }
+        if (activeBranch == null || activeBranch.trim().isEmpty()) {
+            activeBranch = "main";
+        }
+
         Analysis analysis = Analysis.builder()
                 .repositoryName(repoName)
-                .branch(branch)
+                .branch(activeBranch)
                 .status("RUNNING")
                 .build();
         analysis = analysisRepository.save(analysis);
 
-        List<MockFile> filesToAnalyze = getFilesToAnalyze(repoName, branch, gitHubToken);
+        List<MockFile> filesToAnalyze = getFilesToAnalyze(repoName, activeBranch, gitHubToken);
         List<CompletableFuture<List<Issue>>> futures = new ArrayList<>();
 
         for (MockFile file : filesToAnalyze) {
@@ -211,6 +225,23 @@ public class AnalysisService {
 
     private List<MockFile> getFilesToAnalyze(String repoName, String branch, String token) {
         List<MockFile> list = new ArrayList<>();
+        
+        if (repoName != null && repoName.contains("/")) {
+            String[] parts = repoName.split("/");
+            if (parts.length >= 2) {
+                String owner = parts[0];
+                String repo = parts[1];
+                log.info("Fetching real source code files from GitHub for {}/{} on branch {}", owner, repo, branch);
+                List<GithubClient.MockFileDto> gitFiles = githubClient.getRepositoryFiles(owner, repo, branch, token);
+                if (gitFiles != null && !gitFiles.isEmpty()) {
+                    for (GithubClient.MockFileDto f : gitFiles) {
+                        list.add(new MockFile(f.getFilePath(), f.getContent()));
+                    }
+                    return list;
+                }
+                log.warn("No source files found or fetched from GitHub for {}/{}. Falling back to default mock codebase.", owner, repo);
+            }
+        }
         
         list.add(new MockFile(
                 "src/main/java/com/codeguard/core/SecurityFilter.java",

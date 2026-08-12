@@ -190,4 +190,109 @@ public class GithubClient {
         files.add(file1);
         return files;
     }
+
+    public List<MockFileDto> getRepositoryFiles(String owner, String repo, String branch, String token) {
+        String activeToken = getActiveToken(token);
+        List<MockFileDto> filesList = new ArrayList<>();
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            if (!activeToken.isEmpty()) {
+                headers = buildHeaders(activeToken);
+            } else {
+                headers.set("User-Agent", "CodeGuard-AI-Backend");
+                headers.setAccept(List.of(MediaType.valueOf("application/vnd.github+json")));
+                headers.set("X-GitHub-Api-Version", "2022-11-28");
+            }
+            String url = GITHUB_API_URL + "/repos/" + owner + "/" + repo + "/git/trees/" + branch + "?recursive=1";
+            ResponseEntity<GitHubTreeResponse> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    GitHubTreeResponse.class
+            );
+            logRateLimitDetails(response.getHeaders());
+            GitHubTreeResponse treeResponse = response.getBody();
+            if (treeResponse == null || treeResponse.tree == null) {
+                return filesList;
+            }
+
+            List<GitHubTreeItem> items = treeResponse.tree.stream()
+                    .filter(item -> "blob".equals(item.type))
+                    .filter(item -> item.path.endsWith(".py") || item.path.endsWith(".cs") || item.path.endsWith(".java") || item.path.endsWith(".js") || item.path.endsWith(".ts"))
+                    .limit(10)
+                    .collect(java.util.stream.Collectors.toList());
+
+            for (GitHubTreeItem item : items) {
+                try {
+                    String contentUrl = GITHUB_API_URL + "/repos/" + owner + "/" + repo + "/contents/" + item.path + "?ref=" + branch;
+                    ResponseEntity<GitHubContentResponse> contentRes = restTemplate.exchange(
+                            contentUrl,
+                            HttpMethod.GET,
+                            new HttpEntity<>(headers),
+                            GitHubContentResponse.class
+                    );
+                    GitHubContentResponse contentObj = contentRes.getBody();
+                    if (contentObj != null && contentObj.content != null) {
+                        String cleanBase64 = contentObj.content.replaceAll("\\s", "");
+                        byte[] decodedBytes = java.util.Base64.getDecoder().decode(cleanBase64);
+                        String content = new String(decodedBytes, java.nio.charset.StandardCharsets.UTF_8);
+                        filesList.add(new MockFileDto(item.path, content));
+                    }
+                } catch (Exception ex) {
+                    log.error("Failed to fetch file content for path {}: {}", item.path, ex.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch tree from GitHub for {}/{}: {}", owner, repo, e.getMessage());
+        }
+        return filesList;
+    }
+
+    public String getDefaultBranch(String owner, String repo, String token) {
+        String activeToken = getActiveToken(token);
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            if (!activeToken.isEmpty()) {
+                headers = buildHeaders(activeToken);
+            } else {
+                headers.set("User-Agent", "CodeGuard-AI-Backend");
+                headers.setAccept(List.of(MediaType.valueOf("application/vnd.github+json")));
+                headers.set("X-GitHub-Api-Version", "2022-11-28");
+            }
+            ResponseEntity<GitHubRepoDto> response = restTemplate.exchange(
+                    GITHUB_API_URL + "/repos/" + owner + "/" + repo,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    GitHubRepoDto.class
+            );
+            if (response.getBody() != null && response.getBody().getDefaultBranch() != null) {
+                return response.getBody().getDefaultBranch();
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch default branch for {}/{}: {}", owner, repo, e.getMessage());
+        }
+        return "main";
+    }
+
+    public static class GitHubTreeResponse {
+        public List<GitHubTreeItem> tree;
+    }
+
+    public static class GitHubTreeItem {
+        public String path;
+        public String type;
+    }
+
+    public static class GitHubContentResponse {
+        public String content;
+        public String encoding;
+    }
+
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class MockFileDto {
+        private String filePath;
+        private String content;
+    }
 }

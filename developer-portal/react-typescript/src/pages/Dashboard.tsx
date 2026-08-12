@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTechnicalDebt, getRecentAnalyses, startAnalysis } from '../services/analyses';
 import type { Analysis } from '../services/analyses';
-import { Play, Clipboard, Clock, AlertTriangle } from 'lucide-react';
+import { Play, Clipboard, Clock, AlertTriangle, Plus, X } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +11,25 @@ const Dashboard: React.FC = () => {
   const [debtHours, setDebtHours] = useState(0.0);
   const [loading, setLoading] = useState(false);
   const [triggering, setTriggering] = useState(false);
+
+  // Dynamic Repository List
+  const [repositories, setRepositories] = useState<string[]>(() => {
+    const saved = localStorage.getItem('addedRepos');
+    const base = ['codeguard-core-backend', 'example-react-app'];
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return [...base, ...parsed];
+      } catch {
+        return base;
+      }
+    }
+    return base;
+  });
+
+  const [showModal, setShowModal] = useState(false);
+  const [newRepoInput, setNewRepoInput] = useState('');
+  const [modalError, setModalError] = useState('');
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -50,6 +69,57 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleAddRepository = () => {
+    let input = newRepoInput.trim();
+    if (!input) {
+      setModalError('Repository name or URL cannot be empty.');
+      return;
+    }
+
+    // Parse URL if provided
+    if (input.startsWith('http://') || input.startsWith('https://')) {
+      try {
+        const urlObj = new URL(input);
+        const pathSegments = urlObj.pathname.split('/').filter(s => s.trim().length > 0);
+        if (pathSegments.length >= 2) {
+          input = `${pathSegments[0]}/${pathSegments[1]}`;
+        } else {
+          setModalError('Invalid GitHub URL format.');
+          return;
+        }
+      } catch {
+        setModalError('Invalid URL.');
+        return;
+      }
+    }
+
+    // Basic owner/repo validation
+    const parts = input.split('/');
+    if (parts.length !== 2 || !parts[0].trim() || !parts[1].trim()) {
+      setModalError('Please enter in owner/repo format (e.g. google/gson).');
+      return;
+    }
+
+    const finalRepoName = `${parts[0].trim()}/${parts[1].trim()}`;
+    if (repositories.includes(finalRepoName)) {
+      setModalError('Repository is already registered.');
+      return;
+    }
+
+    const newRepos = [...repositories, finalRepoName];
+    setRepositories(newRepos);
+
+    // Save only dynamically added repos to localStorage
+    const base = ['codeguard-core-backend', 'example-react-app'];
+    const addedOnly = newRepos.filter(r => !base.includes(r));
+    localStorage.setItem('addedRepos', JSON.stringify(addedOnly));
+
+    setSelectedRepo(finalRepoName);
+    setNewRepoInput('');
+    setModalError('');
+    setShowModal(false);
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
@@ -58,6 +128,23 @@ const Dashboard: React.FC = () => {
           <p style={{ color: '#9ea0a5', fontSize: '15px' }}>Monitor security metrics, quality scores, and debt trends.</p>
         </div>
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+          <button
+            onClick={() => setShowModal(true)}
+            style={{
+              padding: '10px 16px',
+              background: '#1f2833',
+              border: '1px solid #2e303a',
+              borderRadius: '6px',
+              color: '#fff',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Plus size={16} /> Add Repo
+          </button>
           <select
             value={selectedRepo}
             onChange={(e) => setSelectedRepo(e.target.value)}
@@ -70,8 +157,9 @@ const Dashboard: React.FC = () => {
               cursor: 'pointer'
             }}
           >
-            <option value="codeguard-core-backend">codeguard-core-backend</option>
-            <option value="example-react-app">example-react-app</option>
+            {repositories.map((repo) => (
+              <option key={repo} value={repo}>{repo}</option>
+            ))}
           </select>
           <button
             onClick={handleTriggerAnalysis}
@@ -94,6 +182,83 @@ const Dashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Modal Dialog */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#1f2833',
+            border: '1px solid #2e303a',
+            borderRadius: '8px',
+            width: '100%',
+            maxWidth: '450px',
+            padding: '24px',
+            position: 'relative'
+          }}>
+            <button
+              onClick={() => { setShowModal(false); setModalError(''); }}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'none',
+                border: 'none',
+                color: '#9ea0a5',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={20} />
+            </button>
+            <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 600, marginBottom: '12px' }}>Add GitHub Repository</h3>
+            <p style={{ color: '#9ea0a5', fontSize: '14px', marginBottom: '20px' }}>Enter the repository identifier in <strong>owner/repository</strong> format or paste the full GitHub URL.</p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <input
+                type="text"
+                value={newRepoInput}
+                onChange={(e) => setNewRepoInput(e.target.value)}
+                placeholder="e.g. google/gson"
+                style={{
+                  padding: '10px 16px',
+                  background: '#151b24',
+                  border: '1px solid #2e303a',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  fontSize: '14px'
+                }}
+              />
+              {modalError && (
+                <div style={{ color: '#ff4a4a', fontSize: '13px' }}>⚠️ {modalError}</div>
+              )}
+              <button
+                onClick={handleAddRepository}
+                style={{
+                  padding: '12px',
+                  background: '#66fcf1',
+                  color: '#0b0c10',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Add Repository
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Overview Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '30px' }}>
@@ -120,30 +285,30 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div style={{ background: '#151b24', border: '1px solid #2e303a', borderRadius: '8px', padding: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ background: 'rgba(255, 74, 74, 0.1)', padding: '15px', borderRadius: '8px' }}>
-            <AlertTriangle size={28} color="#ff4a4a" />
+          <div style={{ background: 'rgba(231, 76, 60, 0.1)', padding: '15px', borderRadius: '8px' }}>
+            <AlertTriangle size={28} color="#e74c3c" />
           </div>
           <div>
-            <h4 style={{ color: '#9ea0a5', fontSize: '14px', fontWeight: 500 }}>Recent Health Status</h4>
-            <div style={{ fontSize: '24px', fontWeight: 700, color: '#fff', marginTop: '4px' }}>
-              {recentRuns.length > 0 && recentRuns[0].overallScore > 80 ? 'EXCELLENT' : recentRuns.length > 0 ? 'WARNING' : 'N/A'}
+            <h4 style={{ color: '#9ea0a5', fontSize: '14px', fontWeight: 500 }}>Latest Run Status</h4>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: '#fff', marginTop: '4px', textTransform: 'capitalize' }}>
+              {recentRuns.length > 0 ? recentRuns[0].status.toLowerCase() : 'N/A'}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Analysis Table */}
-      <div style={{ background: '#151b24', border: '1px solid #2e303a', borderRadius: '8px', padding: '30px' }}>
-        <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 600, marginBottom: '20px' }}>Recent Analyses</h3>
+      {/* Analysis History */}
+      <div style={{ background: '#151b24', border: '1px solid #2e303a', borderRadius: '8px', padding: '24px' }}>
+        <h3 style={{ fontSize: '20px', color: '#fff', fontWeight: 600, marginBottom: '20px' }}>Analysis History</h3>
         {loading ? (
-          <div>Loading history...</div>
+          <div style={{ color: '#9ea0a5', textAlign: 'center', padding: '40px' }}>Loading history...</div>
         ) : recentRuns.length === 0 ? (
-          <div style={{ color: '#9ea0a5' }}>No analysis runs found for {selectedRepo}.</div>
+          <div style={{ color: '#9ea0a5', textAlign: 'center', padding: '40px' }}>No analysis runs recorded yet. Click "Run Analysis" to start.</div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #2e303a', color: '#9ea0a5', fontSize: '14px' }}>
+                <tr style={{ borderBottom: '2px solid #2e303a', fontSize: '14px', color: '#9ea0a5' }}>
                   <th style={{ padding: '12px' }}>Run ID</th>
                   <th style={{ padding: '12px' }}>Branch</th>
                   <th style={{ padding: '12px' }}>Status</th>

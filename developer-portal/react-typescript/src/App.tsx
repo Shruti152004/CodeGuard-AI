@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import AnalysisDetail from './pages/AnalysisDetail';
 import CompareAnalyses from './pages/CompareAnalyses';
+import Repositories from './pages/Repositories';
 
 // Protected Route Guard Component
 const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -46,6 +47,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CompareAnalyses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repositories"
+          element={
+            <ProtectedRoute>
+              <Repositories />
             </ProtectedRoute>
           }
         />

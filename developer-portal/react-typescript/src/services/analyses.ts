@@ -66,3 +66,19 @@ export const getRecentAnalyses = async (repoName: string): Promise<Analysis[]> =
   const res = await api.get<Analysis[]>(`/api/analyses/history/${repoName}`);
   return res.data;
 };
+
+export interface GitHubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  description: string;
+  html_url: string;
+  isPrivate: boolean;
+  default_branch: string;
+}
+
+export const getGitHubRepositories = async (githubToken?: string): Promise<GitHubRepo[]> => {
+  const headers = githubToken ? { 'X-GitHub-Token': githubToken } : {};
+  const res = await api.get<GitHubRepo[]>('/api/github/repos', { headers });
+  return res.data;
+};
