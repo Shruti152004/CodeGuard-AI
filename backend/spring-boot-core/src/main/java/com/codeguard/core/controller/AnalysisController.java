@@ -59,4 +59,10 @@ public class AnalysisController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/history/{repoName}")
+    public ResponseEntity<List<Analysis>> getAnalysisHistory(@PathVariable String repoName) {
+        List<Analysis> history = analysisRepository.findByRepositoryNameOrderByCreatedAtDesc(repoName);
+        return ResponseEntity.ok(history);
+    }
 }
